@@ -96,12 +96,17 @@ impl Tarot {
         file_watch(
             affinity_file,
             1000 * 60,
-            Box::new(move |data| update_affinity(data, Arc::clone(&reference))));
+            move |data| update_affinity(data, Arc::clone(&reference)));
     }
 }
 
 fn update_affinity(data: String, affinity: Arc<Mutex<HashMap<String, i32>>>) {
-    let mut affinity = affinity.lock().unwrap();
+    let affinity = affinity.lock();
+    if let Err(e) = affinity {
+        log::error!("Failed to update card affinity");
+        return;
+    }
+    let mut affinity = affinity.unwrap();
     data.lines().enumerate().for_each(|(indx, line)| {
         let entry = line.split(SEPARATOR).collect::<Vec<_>>();
         if entry.len() < 2 {
